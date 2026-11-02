@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "884136360458",
+    "project_id": "sabispend-65b94",
+    "storage_bucket": "sabispend-65b94.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884136360458:android:b7539323c8a596a8b3fdf3",
+        "android_client_info": {
+          "package_name": "com.example.first_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5hXbxclvhypWtheBz1ABSrA4P4GVHSbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
