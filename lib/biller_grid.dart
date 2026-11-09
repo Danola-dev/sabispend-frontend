@@ -15,8 +15,9 @@ class BillerOption {
   /// Short label for the circle avatar — first letters, uppercase.
   String get shortLabel {
     final words = name.split(' ');
-    if (words.length == 1)
+    if (words.length == 1) {
       return name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
+    }
     return (words[0][0] + words[1][0]).toUpperCase();
   }
 }

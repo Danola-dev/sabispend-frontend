@@ -4,10 +4,26 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'push_notification_service.dart';
+import 'dart:io';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init failed: $e');
+  }
+
+  try {
+    if (Platform.isIOS) {
+      await Purchases.configure(
+        PurchasesConfiguration('YOUR_REVENUECAT_IOS_PUBLIC_KEY'),
+      );
+    }
+  } catch (e) {
+    debugPrint('Purchases init failed: $e');
+  }
 
   // Registered before runApp — must happen this early so a message
   // arriving while the app is fully closed still gets handled correctly.

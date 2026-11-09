@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:first_app/app_colors.dart';
 import 'package:first_app/transactions_api.dart';
+import 'package:first_app/money_format.dart';
 
 class PayoutHistoryScreen extends StatefulWidget {
   const PayoutHistoryScreen({super.key});
@@ -18,15 +19,7 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
     _future = TransactionsApi.getPayoutHistory();
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   String _formatTime(DateTime dt) {
     final local = dt.toLocal();
@@ -104,7 +97,7 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
             return ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               itemCount: payouts.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const Divider(height: 1, color: AppColors.border),
               itemBuilder: (context, index) {
                 final payout = payouts[index];

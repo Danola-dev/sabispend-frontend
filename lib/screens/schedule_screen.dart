@@ -7,6 +7,7 @@ import '../api_client.dart';
 import '../transactions_api.dart';
 import '../idempotency_key.dart';
 import 'allowance_exhausted_screen.dart';
+import 'package:first_app/money_format.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -93,15 +94,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   bool get _isReady => _readiness?.ready ?? false;
   bool get _hasPlan => _currentPlanData != null;
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   String _formatDate(DateTime date) {
     const months = [
@@ -359,7 +352,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.tealDark.withOpacity(0.25),
+            color: AppColors.tealDark.withValues(alpha: 0.25),
             blurRadius: 14,
             offset: const Offset(0, 8),
           ),
@@ -437,7 +430,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       decoration: BoxDecoration(
         color: AppColors.tealTint,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.teal.withOpacity(0.3)),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

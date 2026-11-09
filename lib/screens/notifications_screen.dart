@@ -197,7 +197,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     vertical: 12,
                   ),
                   itemCount: _notifications.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const Divider(color: AppColors.border, height: 1),
                   itemBuilder: (context, index) {
                     final notification = _notifications[index];
@@ -240,7 +240,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 14),
         color: notification.isRead
             ? Colors.transparent
-            : AppColors.tealTint.withOpacity(0.3),
+            : AppColors.tealTint.withValues(alpha: 0.3),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

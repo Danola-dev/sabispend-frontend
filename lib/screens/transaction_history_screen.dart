@@ -4,6 +4,7 @@ import 'package:first_app/transactions_api.dart';
 import 'package:first_app/api_client.dart';
 import 'package:first_app/transaction_display_helpers.dart';
 import 'transaction_detail_screen.dart';
+import 'package:first_app/money_format.dart';
 
 enum _PeriodFilter { all, today, thisWeek, thisMonth, last3Months }
 
@@ -54,15 +55,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     }
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   List<TransactionResult> get _filteredTransactions {
     final now = DateTime.now();
@@ -79,8 +72,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           break;
         case _PeriodFilter.thisMonth:
           if (txn.createdAt.year != now.year ||
-              txn.createdAt.month != now.month)
+              txn.createdAt.month != now.month) {
             return false;
+          }
           break;
         case _PeriodFilter.last3Months:
           final threeMonthsAgo = DateTime(now.year, now.month - 3, now.day);
@@ -89,7 +83,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       }
 
       // Type filter
-      final outgoing = transactionIsOutgoing(txn.transactionType);
+      final outgoing =
+          txn.transactionType == 'bill_payment' ||
+          transactionIsOutgoing(txn.transactionType);
       switch (_typeFilter) {
         case _TypeFilter.all:
           return true;
@@ -409,7 +405,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                           vertical: 12,
                         ),
                         itemCount: filtered.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const Divider(color: AppColors.border, height: 1),
                         itemBuilder: (context, index) =>
                             _buildTransactionRow(filtered[index]),
@@ -473,7 +469,11 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Widget _buildTransactionRow(TransactionResult txn) {
-    final outgoing = transactionIsOutgoing(txn.transactionType);
+    final isBill = txn.transactionType == 'bill_payment';
+    final outgoing = isBill || transactionIsOutgoing(txn.transactionType);
+    final title = (isBill && (txn.narration ?? '').isNotEmpty)
+        ? txn.narration!
+        : transactionTitleFor(txn.transactionType);
     final sign = outgoing ? '-' : '+';
     final amountColor = outgoing ? const Color(0xFFD64545) : AppColors.teal;
 
@@ -508,7 +508,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      transactionTitleFor(txn.transactionType),
+                      title,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,

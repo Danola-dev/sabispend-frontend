@@ -48,8 +48,9 @@ class BeneficiaryStore {
     if (isSaved(
       accountNumber: beneficiary.accountNumber,
       bank: beneficiary.bank,
-    ))
+    )) {
       return;
+    }
     _beneficiaries.insert(0, beneficiary);
   }
 }

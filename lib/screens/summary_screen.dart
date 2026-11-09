@@ -4,6 +4,7 @@ import 'package:first_app/app_colors.dart';
 import 'package:first_app/transactions_api.dart';
 import 'package:first_app/api_client.dart';
 import 'transaction_pin_sheet.dart';
+import 'package:first_app/money_format.dart';
 
 enum _ResultState { none, processing, success, failed }
 
@@ -76,15 +77,7 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
   static const int _maxPollAttempts = 5;
   static const Duration _pollInterval = Duration(seconds: 3);
 
-  String _formatNaira(double value) {
-    final wholeAmount = value.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   _TransferFees get _fees => _TransferFees.forAmount(widget.amount);
 

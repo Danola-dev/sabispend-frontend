@@ -4,6 +4,7 @@ import 'package:first_app/wallet_api.dart';
 import 'package:first_app/api_client.dart';
 import 'package:first_app/transactions_api.dart';
 import 'package:first_app/idempotency_key.dart';
+import 'package:first_app/money_format.dart';
 
 /// Shown when a user tries to spend more than their spendable balance
 /// before the next scheduled payout. Offers Early Unlock — pull from
@@ -60,15 +61,7 @@ class _AllowanceExhaustedScreenState extends State<AllowanceExhaustedScreen> {
     }
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   String _formatNextPayoutLabel() {
     if (_nextPayoutDate == null) return 'your next payout';
@@ -508,7 +501,7 @@ class _AllowanceExhaustedScreenState extends State<AllowanceExhaustedScreen> {
       decoration: BoxDecoration(
         color: AppColors.tealTint,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.teal.withOpacity(0.3)),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,7 +582,9 @@ class _AllowanceExhaustedScreenState extends State<AllowanceExhaustedScreen> {
           color: selected ? AppColors.teal : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected ? AppColors.teal : AppColors.teal.withOpacity(0.4),
+            color: selected
+                ? AppColors.teal
+                : AppColors.teal.withValues(alpha: 0.4),
           ),
         ),
         child: Text(

@@ -174,7 +174,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
           const SizedBox(height: 28),
           _buildHowItWorks(),
           const SizedBox(height: 20),
-          _buildStatusBanner(),
+          _buildDepositFeeNote(),
         ],
       ),
     );
@@ -198,7 +198,7 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.tealDark.withOpacity(0.25),
+            color: AppColors.tealDark.withValues(alpha: 0.25),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -213,15 +213,15 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
               Text(
                 bankName,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 19,
                   color: Colors.white,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -308,15 +308,6 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
-          child: _actionButton(
-            icon: Icons.share_outlined,
-            label: 'Share',
-            onTap: () {
-              // TODO: wire up native share sheet
-            },
-          ),
-        ),
       ],
     );
   }
@@ -415,24 +406,27 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
     );
   }
 
-  Widget _buildStatusBanner() {
+  Widget _buildDepositFeeNote() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.tealTint,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          Icon(Icons.hourglass_empty, size: 20, color: AppColors.teal),
-          SizedBox(width: 10),
+          Icon(Icons.info_outline, size: 18, color: AppColors.teal),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Waiting for your first deposit',
+              'A small 1% fee applies to deposits. It\'s required by our banking '
+              'partners to process and secure your transfers.',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.teal,
+                fontSize: 13.5,
+                color: AppColors.textPrimary,
+                height: 1.4,
               ),
             ),
           ),

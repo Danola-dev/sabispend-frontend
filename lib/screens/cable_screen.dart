@@ -8,6 +8,7 @@ import 'package:first_app/bills_api.dart';
 import 'package:first_app/token_storage.dart';
 import 'package:first_app/biller_grid.dart';
 import 'bill_review_screen.dart';
+import 'package:first_app/money_format.dart';
 
 const List<BillerOption> kCableProviders = [
   BillerOption(serviceId: 'dstv', name: 'DSTV', color: Color(0xFF002F6C)),
@@ -97,11 +98,12 @@ class _CableScreenState extends State<CableScreen> {
   Future<void> _fetchBalance() async {
     try {
       final wallet = await WalletApi.getWallet();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _spendableBalance = wallet.spendableBalance;
           _isLoadingBalance = false;
         });
+      }
     } on ApiException catch (_) {
       if (mounted) setState(() => _isLoadingBalance = false);
     }
@@ -291,15 +293,7 @@ class _CableScreenState extends State<CableScreen> {
     });
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   bool get _canProceed =>
       _selectedProvider != null &&
@@ -653,8 +647,7 @@ class _CableScreenState extends State<CableScreen> {
       ],
       style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
       decoration: InputDecoration(
-        hintText:
-            'Smartcard number (${_kMinCardLength}-${_kMaxCardLength} digits)',
+        hintText: 'Smartcard number ($_kMinCardLength-$_kMaxCardLength digits)',
         hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 16),
         suffixIcon: _isVerifying
             ? const Padding(
@@ -967,11 +960,12 @@ class _BillBeneficiaryPickerSheetState
   Future<void> _fetch() async {
     try {
       final list = await BillsApi.getBeneficiaries(widget.billType);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _beneficiaries = list;
           _isLoading = false;
         });
+      }
     } on ApiException catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1035,7 +1029,7 @@ class _BillBeneficiaryPickerSheetState
                       vertical: 8,
                     ),
                     itemCount: _beneficiaries.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: AppColors.border),
                     itemBuilder: (context, index) {
                       final b = _beneficiaries[index];

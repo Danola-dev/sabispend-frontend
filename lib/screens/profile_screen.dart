@@ -17,6 +17,7 @@ import 'payment_settings_screen.dart';
 import 'login_settings_screen.dart';
 import 'transaction_history_screen.dart';
 import 'notifications_screen.dart';
+import 'package:first_app/ai_chat_api.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,7 +27,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const String subscriptionStatus = 'Free';
   static const String appVersion = 'Version 1.0.0';
 
   String _userName = '';
@@ -35,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isBiometricEnabled = false;
   bool _isBiometricSupported = false;
   bool _isLoading = true;
+  String _subscriptionStatus = 'Free';
 
   @override
   void initState() {
@@ -56,6 +57,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final biometricSupported = await BiometricAuthService.isDeviceSupported();
     final biometricEnabled = await BiometricAuthService.isEnabled();
 
+    String plan = 'Free';
+    try {
+      final chatStatus = await AIChatApi.getStatus();
+      plan = chatStatus.isPro ? 'Pro' : 'Free';
+    } catch (_) {}
+
     if (!mounted) return;
     setState(() {
       _userName = (name != null && name.isNotEmpty) ? name : 'User';
@@ -65,6 +72,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _isBiometricEnabled = biometricEnabled;
       _isLoading = false;
     });
+  }
+
+  Future<void> _refreshPlan() async {
+    try {
+      final chatStatus = await AIChatApi.getStatus();
+      if (mounted) {
+        setState(() => _subscriptionStatus = chatStatus.isPro ? 'Pro' : 'Free');
+      }
+    } catch (_) {}
   }
 
   Future<void> _handleBiometricToggle(bool newValue) async {
@@ -129,12 +145,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _SettingsItem(
                         icon: Icons.workspace_premium_outlined,
                         label: 'Go Pro subscription',
-                        trailingText: subscriptionStatus,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const GoProScreen(),
-                          ),
-                        ),
+                        trailingText: _subscriptionStatus,
+                        onTap: () => Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(
+                                builder: (_) => const GoProScreen(),
+                              ),
+                            )
+                            .then((_) => _refreshPlan()),
                       ),
                       _SettingsItem(
                         icon: Icons.description_outlined,
@@ -174,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         trailing: _isBiometricSupported
                             ? Switch(
                                 value: _isBiometricEnabled,
-                                activeColor: AppColors.teal,
+                                activeThumbColor: AppColors.teal,
                                 onChanged: _handleBiometricToggle,
                               )
                             : const Text(
@@ -283,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             name: _userName,
             email: _userEmail,
             isKycActive: _isKycActive,
-            subscription: subscriptionStatus,
+            subscription: _subscriptionStatus,
           ),
         ),
       ),
@@ -449,8 +467,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         item.trailingText!,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
+                          fontSize: 15.5,
+                          color: Color.fromARGB(255, 70, 73, 78),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -476,8 +494,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       onTap: () async {
         try {
           final refreshToken = await TokenStorage.getRefreshToken();
-          if (refreshToken != null)
+          if (refreshToken != null) {
             await AuthApi.logout(refreshToken: refreshToken);
+          }
         } catch (_) {}
         await _handleFullLogoutAndNavigate();
       },
@@ -747,8 +766,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         '0',
                                         'back',
                                       ].map((key) {
-                                        if (key.isEmpty)
+                                        if (key.isEmpty) {
                                           return const SizedBox.shrink();
+                                        }
                                         if (key == 'back') {
                                           return InkWell(
                                             borderRadius: BorderRadius.circular(

@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:first_app/money_format.dart';
 import 'package:first_app/screens/add_funds_screen.dart';
 import 'package:first_app/screens/airtime_screen.dart';
 import 'package:first_app/screens/data_screen.dart';
@@ -202,15 +202,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦ $buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   String _frequencyLabel(String frequency) {
     switch (frequency) {
@@ -242,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Setup reminder',
-      barrierColor: Colors.black.withOpacity(0.55),
+      barrierColor: Colors.black.withValues(alpha: 0.55),
       transitionDuration: const Duration(milliseconds: 250),
       pageBuilder: (context, animation, secondaryAnimation) =>
           const SizedBox.shrink(),
@@ -262,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 24,
                         offset: const Offset(0, 12),
                       ),
@@ -594,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
+                  color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -619,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       decoration: BoxDecoration(
         color: AppColors.tealTint,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.teal.withOpacity(0.25)),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -749,39 +741,47 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ];
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: actions.map((a) {
-        return Column(
-          children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () {
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: a.builder)).then((_) {
-                  _fetchWallet();
-                  _fetchTransactions();
-                });
-              },
-              child: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 245, 243, 243),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(a.icon, color: AppColors.teal, size: 28),
+        return Expanded(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: a.builder)).then((_) {
+                _fetchWallet();
+                _fetchTransactions();
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 245, 243, 243),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(a.icon, color: AppColors.teal, size: 28),
+                  ),
+                  const SizedBox(height: 6),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      a.label,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 13.7,
+                        color: Color.fromARGB(255, 31, 34, 37),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              a.label,
-              style: const TextStyle(
-                fontSize: 13.7,
-                color: Color.fromARGB(255, 31, 34, 37),
-              ),
-            ),
-          ],
+          ),
         );
       }).toList(),
     );
@@ -790,38 +790,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildSecondaryCards(BuildContext context) {
     final locked = _walletData?.lockedBalance ?? 0;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _secondaryCard(
-            Icons.lock_outline,
-            'Locked balance',
-            _isLoadingWallet
-                ? '...'
-                : (isLockedBalanceShowing ? _formatNaira(locked) : '****'),
-            isValueHidden: !isLockedBalanceShowing,
-            onToggleVisibility: () {
-              setState(() => isLockedBalanceShowing = !isLockedBalanceShowing);
-            },
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _secondaryCard(
+              Icons.lock_outline,
+              'Locked balance',
+              _isLoadingWallet
+                  ? '...'
+                  : (isLockedBalanceShowing ? _formatNaira(locked) : '****'),
+              isValueHidden: !isLockedBalanceShowing,
+              onToggleVisibility: () {
+                setState(
+                  () => isLockedBalanceShowing = !isLockedBalanceShowing,
+                );
+              },
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: InkWell(
-            onTap: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (context) => AddFundsScreen()));
-            },
+          const SizedBox(width: 12),
+          Expanded(
             child: _secondaryCard(
               Icons.arrow_downward,
               'Add funds',
               'Deposit now →',
               isLink: true,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => AddFundsScreen()),
+                );
+              },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -832,58 +835,80 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     bool isLink = false,
     bool? isValueHidden,
     VoidCallback? onToggleVisibility,
+    VoidCallback? onTap,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(minHeight: 84),
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 242, 241, 241),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 19, color: AppColors.teal),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
-                  ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 19, color: AppColors.teal),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (onToggleVisibility != null)
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: onToggleVisibility,
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: Icon(
+                            isValueHidden == true
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 16,
+                            color: AppColors.teal,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              if (onToggleVisibility != null)
-                InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: onToggleVisibility,
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: Icon(
-                      isValueHidden == true
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      size: 16,
-                      color: AppColors.teal,
+                const SizedBox(height: 10),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: isLink ? AppColors.teal : AppColors.textPrimary,
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isLink ? 16 : 18,
-              fontWeight: FontWeight.w600,
-              color: isLink ? AppColors.teal : AppColors.textPrimary,
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -944,7 +969,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               children: _transactions.asMap().entries.map((entry) {
                 final index = entry.key;
                 final txn = entry.value;
-                final outgoing = transactionIsOutgoing(txn.transactionType);
+                final isBill = txn.transactionType == 'bill_payment';
+                final outgoing =
+                    isBill || transactionIsOutgoing(txn.transactionType);
+                final title = (isBill && (txn.narration ?? '').isNotEmpty)
+                    ? txn.narration!
+                    : transactionTitleFor(txn.transactionType);
                 final sign = outgoing ? '-' : '+';
                 final amountColor = outgoing
                     ? const Color(0xFFD64545)
@@ -985,7 +1015,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                transactionTitleFor(txn.transactionType),
+                                title,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,

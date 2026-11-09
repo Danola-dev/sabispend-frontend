@@ -7,6 +7,7 @@ import 'package:first_app/api_client.dart';
 import 'package:first_app/bills_api.dart';
 import 'package:first_app/idempotency_key.dart';
 import 'transaction_pin_sheet.dart';
+import 'package:first_app/money_format.dart';
 
 const List<BillerOption> kDataNetworks = [
   BillerOption(serviceId: 'mtn-data', name: 'MTN', color: Color(0xFFFFCC00)),
@@ -73,11 +74,12 @@ class _DataScreenState extends State<DataScreen> {
   Future<void> _fetchBalance() async {
     try {
       final wallet = await WalletApi.getWallet();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _spendableBalance = wallet.spendableBalance;
           _isLoadingBalance = false;
         });
+      }
     } on ApiException catch (_) {
       if (mounted) setState(() => _isLoadingBalance = false);
     }
@@ -143,15 +145,7 @@ class _DataScreenState extends State<DataScreen> {
     return _plans.where((p) => p.name.toLowerCase().contains(query)).toList();
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   // Nigerian mobile numbers are 11 digits and start with 0.
   bool get _isPhoneValid =>

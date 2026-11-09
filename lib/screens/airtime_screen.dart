@@ -7,6 +7,7 @@ import 'package:first_app/api_client.dart';
 import 'package:first_app/bills_api.dart';
 import 'package:first_app/idempotency_key.dart';
 import 'transaction_pin_sheet.dart';
+import 'package:first_app/money_format.dart';
 
 const List<BillerOption> kAirtimeNetworks = [
   BillerOption(serviceId: 'mtn', name: 'MTN', color: Color(0xFFFFCC00)),
@@ -66,11 +67,12 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
   Future<void> _fetchBalance() async {
     try {
       final wallet = await WalletApi.getWallet();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _spendableBalance = wallet.spendableBalance;
           _isLoadingBalance = false;
         });
+      }
     } on ApiException catch (_) {
       if (mounted) setState(() => _isLoadingBalance = false);
     }
@@ -83,15 +85,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
     _errorMessage = null;
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   double? get _parsedAmount =>
       double.tryParse(_amountController.text.replaceAll(',', ''));
@@ -369,7 +363,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
               ),
             ),
             child: Text(
-              _formatNaira(amount),
+              '₦${amount.toStringAsFixed(0)}',
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,

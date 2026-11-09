@@ -156,7 +156,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         vertical: 8,
                       ),
                       itemCount: _filteredFaqs.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const Divider(height: 1, color: AppColors.border),
                       itemBuilder: (context, index) =>
                           _FaqTile(item: _filteredFaqs[index]),

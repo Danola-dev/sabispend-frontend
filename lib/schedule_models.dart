@@ -5,6 +5,7 @@
 /// frequency + amount like anyone else; running low before the next
 /// payout is handled by Early Unlock (withdraw from next payout),
 /// not by editing the plan mid-cycle.
+library;
 
 enum PayoutFrequency { daily, weekly, biweekly, monthly }
 

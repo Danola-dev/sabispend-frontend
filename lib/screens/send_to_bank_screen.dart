@@ -8,6 +8,7 @@ import 'package:first_app/beneficiaries_api.dart';
 import 'package:first_app/transactions_api.dart';
 import 'summary_screen.dart';
 import 'allowance_exhausted_screen.dart';
+import 'package:first_app/money_format.dart';
 
 /// Inserts commas as thousand separators while typing (e.g. "5000" ->
 /// "5,000"). Whole numbers only — this app's amount fields are always
@@ -183,15 +184,7 @@ class _SendToBankScreenState extends State<SendToBankScreen> {
     }
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   // NEW: the amount field now displays comma-formatted text (e.g.
   // "5,000"), which is NOT directly parseable as a number — every place
@@ -824,7 +817,7 @@ class _BankPickerSheetState extends State<_BankPickerSheet> {
                       vertical: 8,
                     ),
                     itemCount: _filteredBanks.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: AppColors.border),
                     itemBuilder: (context, index) {
                       final bank = _filteredBanks[index];
@@ -930,7 +923,7 @@ class _BeneficiaryPickerSheet extends StatelessWidget {
                       vertical: 8,
                     ),
                     itemCount: beneficiaries.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: AppColors.border),
                     itemBuilder: (context, index) {
                       final b = beneficiaries[index];

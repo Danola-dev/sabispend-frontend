@@ -10,8 +10,13 @@ import 'forgot_pin_screen.dart';
 
 class WelcomeBackScreen extends StatefulWidget {
   final VoidCallback? onUnlocked;
+  final int biometricAttemptsUsed;
 
-  const WelcomeBackScreen({super.key, this.onUnlocked});
+  const WelcomeBackScreen({
+    super.key,
+    this.onUnlocked,
+    this.biometricAttemptsUsed = 0,
+  });
 
   @override
   State<WelcomeBackScreen> createState() => _WelcomeBackScreenState();
@@ -20,6 +25,12 @@ class WelcomeBackScreen extends StatefulWidget {
 class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
   String _cachedEmail = '';
   String? _cachedFullName;
+
+  static const int _maxBiometricAttempts = 2;
+  late int _biometricAttempts = widget.biometricAttemptsUsed;
+
+  bool get _canTryBiometric =>
+      _biometricAvailableHere && _biometricAttempts < _maxBiometricAttempts;
 
   bool _showEmailInput = false;
   bool _hasCachedUser = false;
@@ -59,6 +70,12 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
     final biometricEnabled = await BiometricAuthService.isEnabled();
     final biometricUsableHere = hasCached && biometricEnabled;
 
+    if (biometricUsableHere && _biometricAttempts == 0) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _tryBiometricUnlock(),
+      );
+    }
+
     if (!mounted) return;
     setState(() {
       _cachedEmail = email ?? '';
@@ -77,20 +94,32 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
   }
 
   Future<void> _tryBiometricUnlock() async {
-    if (!_biometricAvailableHere ||
+    if (!_canTryBiometric ||
         _showEmailInput ||
         _isAttemptingBiometric ||
-        _requires2FA)
+        _requires2FA) {
       return;
+    }
 
-    setState(() => _isAttemptingBiometric = true);
+    setState(() {
+      _isAttemptingBiometric = true;
+      _biometricAttempts++;
+    });
+
     final success = await BiometricAuthService.authenticate(
       reason: 'Unlock to continue',
     );
     if (!mounted) return;
     setState(() => _isAttemptingBiometric = false);
 
-    if (!success) return;
+    if (!success) {
+      if (_biometricAttempts >= _maxBiometricAttempts) {
+        setState(
+          () => _errorMessage = 'Biometrics unavailable. Enter your PIN.',
+        );
+      }
+      return;
+    }
 
     if (widget.onUnlocked != null) {
       widget.onUnlocked!();
@@ -311,8 +340,11 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
       );
     }
 
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       backgroundColor: AppColors.surface,
+      bottomNavigationBar: keyboardOpen ? null : _buildTrustFooter(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -345,7 +377,7 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
                       ),
                     )
                   : _buildKeypad(),
-              if (_biometricAvailableHere &&
+              if (_canTryBiometric &&
                   !_showEmailInput &&
                   !_isSubmitting &&
                   !_isAttemptingBiometric &&
@@ -380,6 +412,36 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
     );
   }
 
+  Widget _buildTrustFooter() {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(
+              Icons.verified_user_outlined,
+              size: 18,
+              color: Color.fromARGB(255, 11, 11, 12),
+            ),
+            SizedBox(width: 3.5),
+            Flexible(
+              child: Text(
+                'In partnership with PayVessel and PalmPay',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Color.fromARGB(255, 23, 24, 26),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     final String title;
     final String subtitle;
@@ -402,9 +464,10 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
           ? _cachedFullName!.split(' ').first
           : null;
       title = firstName != null ? 'Welcome back, $firstName' : 'Welcome back';
-      subtitle = _biometricAvailableHere
+      subtitle = _canTryBiometric
           ? 'Use biometrics or enter your PIN to continue'
           : 'Enter your PIN to continue';
+
       avatarText = (_cachedFullName?.isNotEmpty ?? false)
           ? _cachedFullName![0]
           : '👋';

@@ -33,8 +33,9 @@ class PushNotificationService {
   /// token) — MainTabScreen.initState() is the natural single choke
   /// point, since every login path eventually lands there.
   static Future<void> initialize() async {
-    if (_initialized)
+    if (_initialized) {
       return; // guards against double-init if called from more than one place
+    }
     _initialized = true;
 
     final messaging = FirebaseMessaging.instance;

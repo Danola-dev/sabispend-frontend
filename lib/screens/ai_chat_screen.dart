@@ -124,7 +124,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: const Text(
-          'AI Assistant',
+          'SabiSpend AI',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -221,15 +221,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  '${_status!.messagesUsedThisMonth}/${_status!.monthlyLimit} messages this month',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+              children: [Text('')],
             ),
           ),
         Expanded(

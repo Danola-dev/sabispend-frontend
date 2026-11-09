@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:first_app/app_colors.dart';
 import 'package:first_app/insight_models.dart';
+import 'package:first_app/money_format.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -42,15 +43,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     });
   }
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   @override
   Widget build(BuildContext context) {
@@ -384,8 +377,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
-                  if (index < 0 || index >= data.spendingTrend.length)
+                  if (index < 0 || index >= data.spendingTrend.length) {
                     return const SizedBox.shrink();
+                  }
                   final isLatest = index == latestIndex;
                   return Padding(
                     padding: const EdgeInsets.only(top: 6),

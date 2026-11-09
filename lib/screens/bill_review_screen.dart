@@ -4,6 +4,7 @@ import 'package:first_app/api_client.dart';
 import 'package:first_app/bills_api.dart';
 import 'package:first_app/idempotency_key.dart';
 import 'transaction_pin_sheet.dart';
+import 'package:first_app/money_format.dart';
 
 class BillReviewScreen extends StatefulWidget {
   final String billType;
@@ -42,15 +43,7 @@ class _BillReviewScreenState extends State<BillReviewScreen> {
 
   double get _total => widget.amount + widget.commission;
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   Future<void> _handleConfirm() async {
     final pin = await showTransactionPinSheet(context);

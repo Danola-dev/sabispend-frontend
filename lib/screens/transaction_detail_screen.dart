@@ -3,21 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:first_app/app_colors.dart';
 import 'package:first_app/transactions_api.dart';
 import 'package:first_app/transaction_display_helpers.dart';
+import 'package:first_app/money_format.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   final TransactionResult transaction;
 
   const TransactionDetailScreen({super.key, required this.transaction});
 
-  String _formatNaira(double amount) {
-    final wholeAmount = amount.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < wholeAmount.length; i++) {
-      if (i != 0 && (wholeAmount.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(wholeAmount[i]);
-    }
-    return '₦$buffer';
-  }
+  String _formatNaira(double amount) => formatNaira(amount);
 
   String _formatFullDateTime(DateTime dt) {
     const months = [
@@ -82,7 +75,12 @@ class TransactionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final outgoing = transactionIsOutgoing(transaction.transactionType);
+    final isBill = transaction.transactionType == 'bill_payment';
+    final outgoing =
+        isBill || transactionIsOutgoing(transaction.transactionType);
+    final title = (isBill && (transaction.narration ?? '').isNotEmpty)
+        ? transaction.narration!
+        : transactionTitleFor(transaction.transactionType);
     final sign = outgoing ? '-' : '+';
     final amountColor = outgoing ? const Color(0xFFD64545) : AppColors.teal;
     final status = _statusDisplay(transaction.status);
@@ -172,16 +170,14 @@ class TransactionDetailScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _detailRow(
-                      'Transaction type',
-                      transactionTitleFor(transaction.transactionType),
-                    ),
+                    _detailRow('Transaction type', title),
                     _divider(),
                     _detailRow(
                       'Date & time',
                       _formatFullDateTime(transaction.createdAt),
                     ),
                     _divider(),
+
                     _detailRow(
                       'Reference',
                       transaction.id,

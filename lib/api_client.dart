@@ -149,8 +149,9 @@ class ApiClient {
     String message = 'Something went wrong.';
     try {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded['error'] != null)
+      if (decoded is Map && decoded['error'] != null) {
         message = decoded['error'].toString();
+      }
     } catch (_) {}
 
     throw ApiException(response.statusCode, message);

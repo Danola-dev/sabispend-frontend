@@ -10,24 +10,19 @@ class LoginResult {
   final String? email; // populated only when requires2FA is true
 
   LoginResult.success({
-    required String access,
-    required String refresh,
-    required String fullName,
-    required String phoneNumber,
+    required String this.access,
+    required String this.refresh,
+    required String this.fullName,
+    required String this.phoneNumber,
   }) : requires2FA = false,
-       access = access,
-       refresh = refresh,
-       fullName = fullName,
-       phoneNumber = phoneNumber,
        email = null;
 
-  LoginResult.requires2FA({required String email})
+  LoginResult.requires2FA({required String this.email})
     : requires2FA = true,
       access = null,
       refresh = null,
       fullName = null,
-      phoneNumber = null,
-      email = email;
+      phoneNumber = null;
 }
 
 class AuthApi {
