@@ -18,6 +18,8 @@ import '../push_notification_service.dart';
 import 'notifications_screen.dart';
 import '../notifications_api.dart';
 import 'go_pro_screen.dart';
+import 'ai_chat_screen.dart';
+import '../ai_chat_api.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool isNewSignup;
@@ -56,6 +58,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<TransactionResult> _transactions = [];
   bool _isLoadingTransactions = true;
 
+  AIChatStatus? _aiStatus;
+  bool _proChecked = false;
+
   // Guards automatic refreshes (push / app resume) so they never pile up.
   bool _isAutoRefreshing = false;
   DateTime? _lastRefreshAt;
@@ -68,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _fetchWallet();
     _fetchUnreadCount();
     _fetchTransactions();
+    _fetchProStatus();
     _loadUserName();
 
     // A push arrived while the app is open (e.g. a deposit) — refresh.
@@ -131,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _fetchWallet(),
         _fetchTransactions(),
         _fetchUnreadCount(),
+        _fetchProStatus(),
       ]);
     } catch (_) {
       // Individual fetches already handle their own errors; anything else
@@ -186,6 +193,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final count = await NotificationsApi.getUnreadCount();
       if (mounted) setState(() => _unreadNotificationCount = count);
     } on ApiException catch (_) {}
+  }
+
+  Future<void> _fetchProStatus() async {
+    try {
+      final status = await AIChatApi.getStatus();
+      if (mounted) setState(() => _aiStatus = status);
+    } catch (_) {
+      // Leave it as it was: the banner falls back to Go Pro.
+    } finally {
+      if (mounted) setState(() => _proChecked = true);
+    }
   }
 
   Future<void> _fetchTransactions() async {
@@ -606,6 +624,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildGoProBanner(BuildContext context) {
+    // Wait for the check so a Pro user never sees "Go Pro" flash up first.
+    if (!_proChecked) return const SizedBox.shrink();
+    if (_aiStatus?.isPro == true) return _buildAiBanner(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -649,9 +671,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const GoProScreen())),
+            onTap: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const GoProScreen()))
+                .then((_) => _fetchProStatus()),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -669,6 +691,67 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAiBanner(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => const AIChatScreen()))
+          .then((_) => _fetchProStatus()),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.tealTint,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.teal.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.auto_awesome, color: AppColors.teal, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'SabiSpend AI',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.tealDark,
+                    ),
+                  ),
+                  Text(
+                    'Ask anything about your money',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 72, 108, 152),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.teal,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Ask AI',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
