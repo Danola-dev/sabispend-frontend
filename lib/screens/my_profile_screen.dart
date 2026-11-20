@@ -152,11 +152,6 @@ class MyProfileScreen extends StatelessWidget {
                     icon: Icons.workspace_premium_outlined,
                     label: 'Plan',
                     value: subscription,
-                  ),
-                  _InfoRow(
-                    icon: Icons.workspace_premium_outlined,
-                    label: 'Plan',
-                    value: subscription,
                     valueColor: subscription == 'Pro' ? AppColors.teal : null,
                   ),
                 ],

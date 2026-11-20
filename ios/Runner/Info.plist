@@ -48,6 +48,10 @@
 				</dict>
 			</array>
 		</dict>
+    <key>NSCameraUsageDescription</key>
+    <string>SabiSpend uses your camera to take photos of your documents so we can raise your account limits.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>SabiSpend needs access to your photos so you can choose pictures of your documents to raise your account limits.</string>
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

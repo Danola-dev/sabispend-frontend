@@ -241,10 +241,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final plan = _walletData?.currentPlan;
     if (plan == null) return 'No active plan';
 
-    final daysLeft = plan.nextEditableDate.difference(DateTime.now()).inDays;
-    if (daysLeft <= 0) return 'Payout available now';
-    if (daysLeft == 1) return 'Next payout tomorrow';
-    return 'Next payout in $daysLeft days';
+    final now = DateTime.now();
+    final next = plan.nextEditableDate.toLocal();
+
+    // Only "available now" once the unlock time has actually passed.
+    if (!next.isAfter(now)) return 'Payout available now';
+
+    // Count calendar days, so "tomorrow" really means tomorrow.
+    final today = DateTime.utc(now.year, now.month, now.day);
+    final nextDay = DateTime.utc(next.year, next.month, next.day);
+    final days = nextDay.difference(today).inDays;
+
+    if (days <= 0) return 'Next payout later today';
+    if (days == 1) return 'Next payout tomorrow';
+    return 'Next payout in $days days';
   }
 
   void _showSetupReminderOverlay() {

@@ -120,7 +120,7 @@ class LegalDocumentScreen extends StatelessWidget {
         LegalSection(
           heading: 'Children',
           body:
-              'This app is not intended for anyone under 15. We do not '
+              'This app is not intended for anyone under 18. We do not '
               'knowingly collect data from minors. If you believe a minor '
               'has created an account, contact us and we will investigate '
               'and remove it.',
@@ -137,7 +137,7 @@ class LegalDocumentScreen extends StatelessWidget {
           heading: 'Contact us',
           body:
               'For any privacy question or to exercise your rights under '
-              'the NDPA, contact us at sabispend@gmail.com. If you\'re '
+              'the NDPA, contact us at sabispend1@gmail.com. If you\'re '
               'unsatisfied with our response, you may lodge a complaint '
               'with the Nigeria Data Protection Commission at ndpc.gov.ng.',
         ),
@@ -262,7 +262,7 @@ class LegalDocumentScreen extends StatelessWidget {
           heading: 'Contact us',
           body:
               'Questions about these terms can be sent to '
-              'sabispend@gmail.com.',
+              'sabispend1@gmail.com.',
         ),
       ],
     );

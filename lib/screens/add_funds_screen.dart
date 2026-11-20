@@ -4,12 +4,14 @@ import 'package:first_app/app_colors.dart';
 import 'package:first_app/kyc_api.dart';
 import 'package:first_app/api_client.dart';
 import 'kyc_screen.dart';
+import 'kyc_upgrade_screen.dart';
 
-/// Add Funds screen — shows the user's REAL dedicated virtual account
-/// number to transfer income into. First time this is opened, the user
-/// is sent through BVN verification before ever seeing an account
-/// number (since none exists yet). Every time after, this screen goes
-/// straight to showing their existing account — no repeat verification.
+/// Add Funds screen — shows the user's REAL personal 9PSB account number to
+/// transfer income into. First time this is opened, the user is sent through
+/// BVN verification (details + a code sent to their BVN phone) before ever
+/// seeing an account number (since none exists yet). Every time after, this
+/// screen goes straight to showing their existing account — no repeat
+/// verification.
 class AddFundsScreen extends StatefulWidget {
   const AddFundsScreen({super.key});
 
@@ -29,6 +31,12 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
   }
 
   Future<void> _checkKycAndProceed() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
     try {
       final status = await KYCApi.getStatus();
       if (!mounted) return;
@@ -43,9 +51,9 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
         return;
       }
 
-      // Not verified yet (never submitted, or submitted but still
-      // pending/failed) — send them through verification FIRST. This
-      // screen shows nothing else until that's resolved.
+      // Not verified yet (never submitted, waiting for the code, or failed) —
+      // send them through verification FIRST. This screen shows nothing else
+      // until that's resolved.
       final completed = await Navigator.of(
         context,
       ).push<bool>(MaterialPageRoute(builder: (_) => const BvnKycScreen()));
@@ -174,7 +182,11 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
           const SizedBox(height: 28),
           _buildHowItWorks(),
           const SizedBox(height: 20),
-          _buildDepositFeeNote(),
+          if (kyc.walletTier < 3) ...[
+            _buildUpgradeCard(context, kyc),
+            const SizedBox(height: 20),
+          ],
+          _buildAccountNote(),
         ],
       ),
     );
@@ -210,14 +222,19 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                bankName,
-                style: const TextStyle(
-                  fontSize: 19,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  bankName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -406,7 +423,66 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
     );
   }
 
-  Widget _buildDepositFeeNote() {
+  Widget _buildUpgradeCard(BuildContext context, KYCStatus kyc) {
+    final pending = kyc.isUpgradePending;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const WalletUpgradeScreen()));
+        if (mounted)
+          _checkKycAndProceed(); // pick up a new tier or review status
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.trending_up_rounded, color: AppColors.teal),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pending
+                        ? 'Upgrade under review'
+                        : 'Account level: Tier ${kyc.walletTier}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    pending
+                        ? 'Tap to check the status.'
+                        : 'Raise your limits to hold and receive more.',
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Replaces the old "1% deposit fee" note. That fee came from the previous
+  /// payment partner; 9PSB does not charge it, so the app no longer claims it.
+  Widget _buildAccountNote() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -421,8 +497,9 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'A small 1% fee applies to deposits. It\'s required by our banking '
-              'partners to process and secure your transfers.',
+              'This account number is yours. Save it and use it any time you '
+              'want to add funds. Choose "9Payment Service Bank" (9PSB) as the '
+              'bank in your banking app.',
               style: TextStyle(
                 fontSize: 13.5,
                 color: AppColors.textPrimary,

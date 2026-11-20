@@ -31,6 +31,8 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
   double _spendableBalance = 0;
   bool _isLoadingBalance = true;
 
+  bool isShowingBalance = false;
+
   BillerOption? _selectedNetwork;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
@@ -258,7 +260,6 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
             'Available balance',
@@ -267,6 +268,16 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
               color: Color.fromARGB(255, 39, 41, 44),
             ),
           ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => setState(() => isShowingBalance = !isShowingBalance),
+            child: Icon(
+              isShowingBalance ? Icons.visibility : Icons.visibility_off,
+              size: 18,
+              color: const Color.fromARGB(255, 39, 41, 44),
+            ),
+          ),
+          Spacer(),
           _isLoadingBalance
               ? const SizedBox(
                   width: 16,
@@ -277,7 +288,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                   ),
                 )
               : Text(
-                  _formatNaira(_spendableBalance),
+                  isShowingBalance ? _formatNaira(_spendableBalance) : '*****',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,

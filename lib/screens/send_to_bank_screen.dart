@@ -6,7 +6,7 @@ import 'package:first_app/api_client.dart';
 import 'package:first_app/idempotency_key.dart';
 import 'package:first_app/beneficiaries_api.dart';
 import 'package:first_app/transactions_api.dart';
-import 'summary_screen.dart';
+import 'send_to_bank_summary_screen.dart';
 import 'allowance_exhausted_screen.dart';
 import 'package:first_app/money_format.dart';
 
@@ -48,6 +48,8 @@ class SendToBankScreen extends StatefulWidget {
 class _SendToBankScreenState extends State<SendToBankScreen> {
   double _spendableBalance = 0;
   bool _isLoadingBalance = true;
+
+  bool isShowingBalance = false;
 
   List<BeneficiaryData> _beneficiaries = [];
   bool _isLoadingBeneficiaries = true;
@@ -403,7 +405,6 @@ class _SendToBankScreenState extends State<SendToBankScreen> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
             'Available balance',
@@ -412,6 +413,16 @@ class _SendToBankScreenState extends State<SendToBankScreen> {
               color: Color.fromARGB(255, 39, 41, 44),
             ),
           ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => setState(() => isShowingBalance = !isShowingBalance),
+            child: Icon(
+              isShowingBalance ? Icons.visibility : Icons.visibility_off,
+              size: 18,
+              color: const Color.fromARGB(255, 39, 41, 44),
+            ),
+          ),
+          Spacer(),
           _isLoadingBalance
               ? const SizedBox(
                   width: 16,
@@ -422,7 +433,7 @@ class _SendToBankScreenState extends State<SendToBankScreen> {
                   ),
                 )
               : Text(
-                  _formatNaira(_spendableBalance),
+                  isShowingBalance ? _formatNaira(_spendableBalance) : '*****',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,

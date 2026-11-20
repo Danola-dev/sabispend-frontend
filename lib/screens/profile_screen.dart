@@ -145,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _SettingsItem(
                         icon: Icons.workspace_premium_outlined,
                         label: 'Go Pro subscription',
-                        trailingText: _subscriptionStatus,
+                        trailingText: '',
                         onTap: () => Navigator.of(context)
                             .push(
                               MaterialPageRoute(

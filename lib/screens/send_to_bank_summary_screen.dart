@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:first_app/app_colors.dart';
 import 'package:first_app/transactions_api.dart';
+import 'package:first_app/transfer_fees_api.dart';
 import 'package:first_app/api_client.dart';
 import 'transaction_pin_sheet.dart';
 import 'package:first_app/money_format.dart';
@@ -33,42 +34,17 @@ class SendToBankSummaryScreen extends StatefulWidget {
       _SendToBankSummaryScreenState();
 }
 
-class _TransferFees {
-  final double yourFee;
-  final double paystackFee;
-  final double stampDuty;
-
-  _TransferFees({
-    required this.yourFee,
-    required this.paystackFee,
-    required this.stampDuty,
-  });
-
-  double get total => yourFee + paystackFee + stampDuty;
-
-  factory _TransferFees.forAmount(double amount) {
-    double tierFee;
-    if (amount <= 5000) {
-      tierFee = 10;
-    } else if (amount <= 50000) {
-      tierFee = 25;
-    } else {
-      tierFee = 50;
-    }
-    final stampDuty = amount >= 10000 ? 50.0 : 0.0;
-    return _TransferFees(
-      yourFee: tierFee,
-      paystackFee: tierFee,
-      stampDuty: stampDuty,
-    );
-  }
-}
-
 class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
   bool _isSubmitting = false;
   _ResultState _resultState = _ResultState.none;
   String? _errorMessage;
   String? _finalStatusMessage; // shown if polling times out still processing
+
+  // Fees come from the server (GET /transactions/transfer/fees/), never calculated here,
+  // so the screen can never show a different number from the one the server charges.
+  TransferQuote? _quote;
+  bool _isLoadingQuote = true;
+  String? _quoteError;
 
   // Polling: re-calls initiateTransfer with the SAME idempotencyKey —
   // the backend short-circuits and just returns the transaction's
@@ -79,9 +55,42 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
 
   String _formatNaira(double amount) => formatNaira(amount);
 
-  _TransferFees get _fees => _TransferFees.forAmount(widget.amount);
+  @override
+  void initState() {
+    super.initState();
+    _loadQuote();
+  }
+
+  Future<void> _loadQuote() async {
+    setState(() {
+      _isLoadingQuote = true;
+      _quoteError = null;
+    });
+    try {
+      final quote = await TransferFeesApi.getQuote(widget.amount);
+      if (!mounted) return;
+      setState(() {
+        _quote = quote;
+        _isLoadingQuote = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _quoteError = e.message;
+        _isLoadingQuote = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _quoteError =
+            'Couldn\'t work out the transfer fee. Check your connection and try again.';
+        _isLoadingQuote = false;
+      });
+    }
+  }
 
   Future<void> _handleTransfer() async {
+    if (_quote == null) return;
     final pin = await showTransactionPinSheet(context);
     if (pin == null || !mounted) return;
     setState(() {
@@ -227,9 +236,10 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
     }
   }
 
-  // ============ REVIEW STATE (unchanged form) ============
+  // ============ REVIEW STATE ============
 
   Widget _buildReviewView() {
+    final quote = _quote;
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
@@ -277,6 +287,10 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
             _buildErrorBanner(_errorMessage!),
             const SizedBox(height: 16),
           ],
+          if (_quoteError != null) ...[
+            _buildQuoteErrorBanner(_quoteError!),
+            const SizedBox(height: 16),
+          ],
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -294,19 +308,17 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
                 _summaryRow('Account number', widget.accountNumber),
                 const Divider(height: 1, color: AppColors.border),
                 _summaryRow('Amount', _formatNaira(widget.amount)),
-                _summaryRow(
-                  'Commission',
-                  _formatNaira(_fees.yourFee + _fees.paystackFee),
-                ),
-                if (_fees.stampDuty > 0) ...[
+                if (quote != null) ...[
+                  _summaryRow('Transfer fee', _formatNaira(quote.transferFee)),
+                  if (quote.stampDuty > 0) ...[
+                    const Divider(height: 1, color: AppColors.border),
+                    _summaryRow('Stamp Duty', _formatNaira(quote.stampDuty)),
+                  ],
                   const Divider(height: 1, color: AppColors.border),
-                  _summaryRow('Stamp Duty', _formatNaira(_fees.stampDuty)),
+                  _summaryRow('Total Debit', _formatNaira(quote.totalDebit)),
+                ] else if (_isLoadingQuote) ...[
+                  _summaryRow('Fees', 'Calculating…'),
                 ],
-                const Divider(height: 1, color: AppColors.border),
-                _summaryRow(
-                  'Total Debit',
-                  _formatNaira(widget.amount + _fees.total),
-                ),
                 if (widget.narration != null) ...[
                   const Divider(height: 1, color: AppColors.border),
                   _summaryRow('Narration', widget.narration!),
@@ -349,6 +361,34 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
     );
   }
 
+  Widget _buildQuoteErrorBanner(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDECEC),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, size: 18, color: Color(0xFFD64545)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFFD64545),
+                height: 1.4,
+              ),
+            ),
+          ),
+          TextButton(onPressed: _loadQuote, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+
   Widget _summaryRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13),
@@ -379,7 +419,8 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
   }
 
   Widget _buildTransferButton() {
-    final enabled = !_isSubmitting;
+    // Only enabled once the server has told us the exact fee, so the user always sees the real total.
+    final enabled = !_isSubmitting && _quote != null;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: enabled ? _handleTransfer : null,
@@ -388,7 +429,9 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
         padding: const EdgeInsets.symmetric(vertical: 14),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.tealDark,
+          color: enabled || _isSubmitting
+              ? AppColors.tealDark
+              : AppColors.border,
           borderRadius: BorderRadius.circular(12),
         ),
         child: _isSubmitting
@@ -400,12 +443,12 @@ class _SendToBankSummaryScreenState extends State<SendToBankSummaryScreen> {
                   color: Colors.white,
                 ),
               )
-            : const Text(
+            : Text(
                 'Transfer',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: enabled ? Colors.white : AppColors.textMuted,
                 ),
               ),
       ),

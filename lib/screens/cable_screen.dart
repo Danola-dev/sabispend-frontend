@@ -50,6 +50,8 @@ class _CableScreenState extends State<CableScreen> {
   String? _verifiedCustomerName;
   String? _verifyError;
 
+  bool isShowingBalance = false;
+
   // The exact number the shown name belongs to. This — not whatever is
   // currently typed — is what gets saved and paid, so the name on screen
   // and the card being paid can never disagree.
@@ -571,7 +573,6 @@ class _CableScreenState extends State<CableScreen> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
             'Available balance',
@@ -580,6 +581,16 @@ class _CableScreenState extends State<CableScreen> {
               color: Color.fromARGB(255, 39, 41, 44),
             ),
           ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => setState(() => isShowingBalance = !isShowingBalance),
+            child: Icon(
+              isShowingBalance ? Icons.visibility : Icons.visibility_off,
+              size: 18,
+              color: const Color.fromARGB(255, 39, 41, 44),
+            ),
+          ),
+          Spacer(),
           _isLoadingBalance
               ? const SizedBox(
                   width: 16,
@@ -590,7 +601,7 @@ class _CableScreenState extends State<CableScreen> {
                   ),
                 )
               : Text(
-                  _formatNaira(_spendableBalance),
+                  isShowingBalance ? _formatNaira(_spendableBalance) : '*****',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,

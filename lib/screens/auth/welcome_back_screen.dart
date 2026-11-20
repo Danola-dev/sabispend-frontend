@@ -1,3 +1,4 @@
+import 'package:first_app/partner_trust_footer.dart';
 import 'package:first_app/screens/auth/biometric_auth_service.dart';
 import 'package:first_app/screens/auth/create_account_screen.dart';
 import 'package:first_app/screens/main_tab_screen.dart';
@@ -413,33 +414,7 @@ class _WelcomeBackScreenState extends State<WelcomeBackScreen> {
   }
 
   Widget _buildTrustFooter() {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.verified_user_outlined,
-              size: 18,
-              color: Color.fromARGB(255, 11, 11, 12),
-            ),
-            SizedBox(width: 3.5),
-            Flexible(
-              child: Text(
-                'In partnership with PayVessel and PalmPay',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color.fromARGB(255, 23, 24, 26),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const PartnerTrustFooter();
   }
 
   Widget _buildHeader() {

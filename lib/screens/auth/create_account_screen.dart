@@ -1,6 +1,5 @@
 import 'package:first_app/screens/auth/welcome_back_screen.dart';
 import 'package:first_app/screens/legal_documents_screen.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:first_app/app_colors.dart';
@@ -20,26 +19,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
-  // Tap handlers for the two links inside the terms sentence. These must
-  // be disposed, otherwise they leak.
-  late final TapGestureRecognizer _termsRecognizer;
-  late final TapGestureRecognizer _privacyRecognizer;
-
+  // Each legal document now has its own, independent consent checkbox.
   bool _agreedToTerms = false;
+  bool _agreedToPrivacy = false;
   bool _isSubmitting = false;
   String? _errorMessage;
 
   @override
-  void initState() {
-    super.initState();
-    _termsRecognizer = TapGestureRecognizer()..onTap = _openTermsOfService;
-    _privacyRecognizer = TapGestureRecognizer()..onTap = _openPrivacyPolicy;
-  }
-
-  @override
   void dispose() {
-    _termsRecognizer.dispose();
-    _privacyRecognizer.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -48,7 +35,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   // Opens the real document. The user closes it with the back button /
   // back gesture and lands right here again, with everything they typed
-  // still in place, then decides whether to tick "I agree".
+  // still in place, then decides whether to tick the box.
   void _openTermsOfService() {
     FocusScope.of(context).unfocus();
     Navigator.of(context).push(
@@ -80,6 +67,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       _isPhoneValid &&
       _isEmailValid &&
       _agreedToTerms &&
+      _agreedToPrivacy &&
       !_isSubmitting;
 
   Future<void> _handleContinue() async {
@@ -183,7 +171,23 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               const SizedBox(height: 8),
               _buildPhoneField(),
               const SizedBox(height: 24),
-              _buildTermsCheckbox(),
+              _buildConsentTile(
+                title: 'Terms of Service',
+                subtitle: 'I have read and agree to the Terms of Service.',
+                value: _agreedToTerms,
+                onToggle: () =>
+                    setState(() => _agreedToTerms = !_agreedToTerms),
+                onRead: _openTermsOfService,
+              ),
+              const SizedBox(height: 12),
+              _buildConsentTile(
+                title: 'Privacy Policy',
+                subtitle: 'I have read and agree to the Privacy Policy.',
+                value: _agreedToPrivacy,
+                onToggle: () =>
+                    setState(() => _agreedToPrivacy = !_agreedToPrivacy),
+                onRead: _openPrivacyPolicy,
+              ),
               const SizedBox(height: 32),
               _buildContinueButton(),
               const SizedBox(height: 25),
@@ -321,59 +325,127 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
   }
 
-  Widget _buildTermsCheckbox() {
-    const linkStyle = TextStyle(
-      color: AppColors.teal,
-      fontWeight: FontWeight.w600,
-      decoration: TextDecoration.underline,
-      decorationColor: AppColors.teal,
+  /// A rounded, animated checkbox with a white tick.
+  Widget _buildCheckbox(bool checked) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: checked ? AppColors.teal : Colors.transparent,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(
+          color: checked ? AppColors.teal : AppColors.textMuted,
+          width: 1.6,
+        ),
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 150),
+        transitionBuilder: (child, animation) =>
+            ScaleTransition(scale: animation, child: child),
+        child: checked
+            ? const Icon(
+                Icons.check_rounded,
+                key: ValueKey('checked'),
+                size: 17,
+                color: Colors.white,
+              )
+            : const SizedBox.shrink(key: ValueKey('unchecked')),
+      ),
     );
+  }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Only the checkbox itself toggles agreement. The links open the
-        // documents and never tick the box by accident.
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2, right: 8, bottom: 6),
-            child: Icon(
-              _agreedToTerms ? Icons.check_box : Icons.check_box_outline_blank,
-              size: 23,
-              color: _agreedToTerms
-                  ? AppColors.teal
-                  : const Color.fromARGB(255, 16, 16, 18),
-            ),
+  /// One consent card per legal document. Tapping the card toggles the
+  /// checkbox; tapping "Read" opens the document without toggling anything.
+  Widget _buildConsentTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required VoidCallback onToggle,
+    required VoidCallback onRead,
+  }) {
+    return Semantics(
+      checked: value,
+      label: subtitle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: value ? AppColors.teal : AppColors.border,
+            width: value ? 1.5 : 1,
           ),
         ),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color.fromARGB(255, 13, 14, 15),
-                height: 1.5,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              child: Row(
+                children: [
+                  _buildCheckbox(value),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            height: 1.35,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: onRead,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Read',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.teal,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: AppColors.teal,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              children: [
-                const TextSpan(text: 'I agree to the '),
-                TextSpan(
-                  text: 'Terms of Service',
-                  style: linkStyle,
-                  recognizer: _termsRecognizer,
-                ),
-                const TextSpan(text: ' and '),
-                TextSpan(
-                  text: 'Privacy Policy',
-                  style: linkStyle,
-                  recognizer: _privacyRecognizer,
-                ),
-              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
